@@ -9,6 +9,9 @@ const wrapIt = function(fn) {
         catch (err) { return true; }
     };
 };
+const constantFunction = fc.anything().map(v => {
+    return eval(`_ => ${JSON.stringify(v)}`);
+});
 
 describe('Breaking \'return true to win\' using Property based Testing', () => {
     // Those examples have been extracted from
@@ -42,5 +45,23 @@ describe('Breaking \'return true to win\' using Property based Testing', () => {
             return (x++ !== x) && (x++ === x);
         }
         fc.assert(fc.property(fc.anything(), x => wrapIt(peano)(x)), settings);
+    });
+    it('ouroborobj', () => {
+        function ouroborobj(x) {
+            return x in x;
+        }
+        fc.assert(fc.property(fc.anything(), x => wrapIt(ouroborobj)(x)), settings);
+    });
+    it('evil1', () => {
+        function evil1(x) {
+            return eval(x+'(x)') && !eval(x)(x);
+        }
+        fc.assert(fc.property(constantFunction, x => wrapIt(evil1)(x)), settings);
+    });
+    it('closure', () => {
+        function closure(x) {
+            return x[x] == x;
+        }
+        fc.assert(fc.property(fc.anything(), x => wrapIt(closure)(x)), settings);
     });
 });
